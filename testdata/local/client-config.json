@@ -1,0 +1,5 @@
+{
+  "conn_addr": "localhost:3200",
+  "log_level": "info",
+  "log_file": "client.log"
+}
