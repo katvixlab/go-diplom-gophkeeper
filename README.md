@@ -1,78 +1,139 @@
-# Менеджер паролей GophKeeper
+# GophKeeper
 
-## Общие требования
+GophKeeper is a learning project: a client-server password manager written in Go.
+It stores private user data (credentials, text notes, binary notes, and bank card records) and synchronizes it through a gRPC backend.
 
-GophKeeper представляет собой клиент-серверную систему, позволяющую пользователю надёжно и безопасно хранить логины,
-пароли, бинарные данные и прочую приватную информацию.
-![image info](https://pictures.s3.yandex.net/resources/gophkeeper_2x_1650456239.png)
+## Features
 
-### Сервер должен реализовывать следующую бизнес-логику:
+- User registration and login.
+- JWT-based authentication.
+- Encrypted note payloads on the client side.
+- gRPC API for notes and users.
+- Terminal UI client (TUI).
+- SQLite storage with GORM.
 
-- регистрация, аутентификация и авторизация пользователей;
-- хранение приватных данных;
-- синхронизация данных между несколькими авторизованными клиентами одного владельца;
-- передача приватных данных владельцу по запросу.
+## Project Structure
 
-### Клиент должен реализовывать следующую бизнес-логику:
+- `cmd/server` - gRPC server entrypoint.
+- `cmd/client` - TUI client entrypoint.
+- `cmd/seed` - local demo data seeding utility.
+- `internal/interfaces/server` - server gRPC handlers.
+- `internal/services/ui` - client interaction with API.
+- `internal/database` - persistence layer.
+- `internal/models` - domain models and note types.
+- `testdata/local` - ready-to-use local configs and demo credentials.
 
-- аутентификация и авторизация пользователей на удалённом сервере;
-- доступ к приватным данным по запросу.
+## Tech Stack
 
-### Функции, реализация которых остаётся на усмотрение исполнителя:
+- Go 1.22+
+- gRPC + Protocol Buffers
+- GORM + SQLite
+- Logrus
+- TView/TCell (terminal UI)
 
-- создание, редактирование и удаление данных на стороне сервера или клиента;
-- формат регистрации нового пользователя;
-- выбор хранилища и формат хранения данных;
-- обеспечение безопасности передачи и хранения данных;
-- протокол взаимодействия клиента и сервера;
-- механизмы аутентификации пользователя и авторизации доступа к информации.
+## Quick Start (Local Demo)
 
-### Дополнительные требования:
+### 1. Start the server
 
-- клиент должен распространяться в виде CLI-приложения с возможностью запуска на платформах Windows, Linux и Mac OS;
-- клиент должен давать пользователю возможность получить информацию о версии и дате сборки бинарного файла клиента.
+```bash
+./scripts/run-local.sh
+```
 
-## Типы хранимой информации
+This uses `testdata/local/server-config.json` and creates `demo.db` in the repository root.
+If `private.pem` is missing, the script generates a local RSA key automatically.
 
-- пары логин/пароль;
-- произвольные текстовые данные;
-- произвольные бинарные данные;
-- данные банковских карт.
+### 2. Seed demo user and sample notes
 
-Для любых данных должна быть возможность хранения произвольной текстовой метаинформации (принадлежность данных к
-веб-сайту, личности или банку, списки одноразовых кодов активации и прочее).
+In a second terminal:
 
-## Абстрактная схема взаимодействия с системой
+```bash
+./scripts/seed-local.sh
+```
 
-Ниже описаны базовые сценарии взаимодействия пользователя с системой. Они не являются исчерпывающими — решение отдельных
-сценариев (например, разрешение конфликтов данных на сервере) остаётся на усмотрение исполнителя.
+Seed defaults:
 
-#### Для нового пользователя:
+- username: `demo-user`
+- email: `demo@example.com`
+- password: `DemoPass123!`
 
-- Пользователь получает клиент под необходимую ему платформу.
-- Пользователь проходит процедуру первичной регистрации.
-- Пользователь добавляет в клиент новые данные.
-- Клиент синхронизирует данные с сервером.
+Reference file: `testdata/local/demo-user.json`.
 
-#### Для существующего пользователя:
+### 3. Run the TUI client
 
-- Пользователь получает клиент под необходимую ему платформу.
-- Пользователь проходит процедуру аутентификации.
-- Клиент синхронизирует данные с сервером.
-- Пользователь запрашивает данные.
-- Клиент отображает данные для пользователя.
+```bash
+GOCACHE="$(pwd)/.cache/go-build" GOMODCACHE="$(pwd)/.cache/go-mod" \
+  go run ./cmd/client -cfg testdata/local/client-config.json
+```
 
-### Тестирование и документация
+Log in with the seeded credentials.
 
-Код всей системы должен быть покрыт юнит-тестами не менее чем на 80%. Каждая экспортированная функция, тип, переменная,
-а также пакет системы должны содержать исчерпывающую документацию.
+### Demo UI client (server should be started first)
 
-### Необязательные функции
+```bash
+./scripts/demo-ui.sh
+```
 
-Перечисленные ниже функции необязательны к имплементации, однако позволяют лучше оценить степень экспертизы исполнителя.
-Исполнитель может реализовать любое количество из представленных ниже функций на свой выбор:
-поддержка данных типа OTP (one time password);
-поддержка терминального интерфейса (TUI — terminal user interface);
-использование бинарного протокола;
-наличие функциональных и/или интеграционных тестов;
-описание протокола взаимодействия клиента и сервера в формате Swagger.
+This script launches the regular TUI client only.
+Recommended demo flow:
+
+```bash
+./scripts/run-local.sh
+./scripts/seed-local.sh
+./scripts/demo-ui.sh
+```
+
+## UI Screenshots
+
+<details>
+  <summary>Main screen</summary>
+  <br>
+  <img src="docs/main.png" alt="Main UI" width="900">
+</details>
+
+<details>
+  <summary>Credential note form</summary>
+  <br>
+  <img src="docs/credential.png" alt="Credential UI" width="900">
+</details>
+
+<details>
+  <summary>Bank card note form</summary>
+  <br>
+  <img src="docs/bankcard.png" alt="Bank Card UI" width="900">
+</details>
+
+## Configuration
+
+Server config example (`testdata/local/server-config.json`):
+
+```json
+{
+  "conn_addr": "localhost:3200",
+  "log_level": "info",
+  "crt_file": "private.pem",
+  "db_file": "demo.db"
+}
+```
+
+Client config example (`testdata/local/client-config.json`):
+
+```json
+{
+  "conn_addr": "localhost:3200",
+  "log_level": "info",
+  "log_file": "client.log"
+}
+```
+
+CLI flags override values from config files.
+
+## Testing
+
+```bash
+GOCACHE="$(pwd)/.cache/go-build" GOMODCACHE="$(pwd)/.cache/go-mod" go test ./...
+```
+
+## Notes
+
+This repository is learning as a portfolio project, focused on code clarity, practical architecture, and demonstration value.
+It is not production-hardened and still has known limitations (global singletons, limited integration tests, no secret rotation).

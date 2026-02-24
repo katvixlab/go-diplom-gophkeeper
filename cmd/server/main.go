@@ -16,51 +16,50 @@ import (
 	"gorm.io/gorm"
 )
 
-var (
-	logg *logger.Logger
-)
+var appLogger *logger.Logger
 
 func main() {
 	parseFlags()
 	initLogger()
+
 	db, err := gorm.Open(sqlite.Open(dbFile), &gorm.Config{})
 	if err != nil {
 		log.Fatal("failed to connect database", err)
 	}
 
-	store := *database.NewDataStore(logg, db)
-	err = store.Migrate()
-	if err != nil {
+	store := *database.NewDataStore(appLogger, db)
+	if err = store.Migrate(); err != nil {
 		log.Fatal("failed to migrate database", err)
 	}
 
-	authService, err := auth.NewAuthService(logg, crtFile)
+	authService, err := auth.NewAuthService(appLogger, crtFile)
 	if err != nil {
 		log.Fatal("failed to initialize auth service", err)
 	}
 
-	controller := server.NewController(logg, store, *authService)
-	listen, err := net.Listen("tcp", srvAddr)
+	controller := server.NewController(appLogger, store, *authService)
+	listener, err := net.Listen("tcp", srvAddr)
 	if err != nil {
-		log.Fatal("failed start listener", err)
+		log.Fatal("failed to start listener", err)
 	}
-	gServer := grpc.NewServer(grpc.UnaryInterceptor(server.TokenInterceptor))
-	pb.RegisterNoteServicesServer(gServer, controller)
-	pb.RegisterUserServicesServer(gServer, controller)
-	logg.Info("server started")
-	if err := gServer.Serve(listen); err != nil {
-		log.Fatal("failed start server", err)
+
+	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(server.TokenInterceptor))
+	pb.RegisterNoteServicesServer(grpcServer, controller)
+	pb.RegisterUserServicesServer(grpcServer, controller)
+
+	appLogger.Info("server started")
+	if err = grpcServer.Serve(listener); err != nil {
+		log.Fatal("failed to start gRPC server", err)
 	}
 }
 
 func initLogger() {
-
 	level, err := logrus.ParseLevel(logLevel)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	l := &logrus.Logger{
+	rawLogger := &logrus.Logger{
 		Out:   os.Stdout,
 		Level: level,
 		Formatter: &logrus.JSONFormatter{
@@ -72,5 +71,6 @@ func initLogger() {
 			},
 		},
 	}
-	logg = logger.NewLogger(l)
+
+	appLogger = logger.NewLogger(rawLogger)
 }

@@ -1,16 +1,16 @@
 package main
 
 import (
-	"flag"
-	"os"
+	"path/filepath"
 	"testing"
-	"time"
 )
 
-func Test_Main(t *testing.T) {
-	go func() {
-		flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
-		main()
-	}()
-	time.Sleep(5 * time.Second)
+func TestInitLogger(t *testing.T) {
+	logLevel = "info"
+	logFile = filepath.Join(t.TempDir(), "client.log")
+
+	initLogger()
+	if appLogger == nil {
+		t.Fatal("expected app logger to be initialized")
+	}
 }

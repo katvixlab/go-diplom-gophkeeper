@@ -21,4 +21,13 @@
 go.work
 go.work.sum
 
-.idea/**
+# IDE
+.idea/
+
+# Local runtime artifacts
+*.db
+*.log
+*.pem
+config_c.json
+config_s.json
+.cache/

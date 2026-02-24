@@ -12,39 +12,34 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-var (
-	logg *logger.Logger
-)
+var appLogger *logger.Logger
 
 func main() {
 	parseFlags()
 	initLogger()
+
 	conn, err := grpc.NewClient(connAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer func(conn *grpc.ClientConn) {
-		err := conn.Close()
-		if err != nil {
-			logg.Error(err)
+		if closeErr := conn.Close(); closeErr != nil {
+			appLogger.Error(closeErr)
 		}
 	}(conn)
 
-	serviceNote := ui.NewUIService(logg, conn)
-	controller := mvc.NewUIController(logg, serviceNote)
-	controller.AddItemInfoList("The application has started successfully. Hello! 😁")
-	err = controller.Run()
-	if err != nil {
-		log.Fatal("start controller controller is fail", err)
+	uiService := ui.NewUIService(appLogger, conn)
+	controller := mvc.NewUIController(appLogger, uiService)
+	controller.AddItemInfoList("The application started successfully. Welcome!")
+	if err = controller.Run(); err != nil {
+		log.Fatal("failed to start UI controller", err)
 	}
 }
 
 func initLogger() {
-	var file *os.File
-	if f, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666); err != nil {
-		file = os.Stdout
-	} else {
-		file = f
+	logOutput := os.Stdout
+	if file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666); err == nil {
+		logOutput = file
 	}
 
 	level, err := logrus.ParseLevel(logLevel)
@@ -52,8 +47,8 @@ func initLogger() {
 		log.Fatal(err)
 	}
 
-	l := &logrus.Logger{
-		Out:   file,
+	rawLogger := &logrus.Logger{
+		Out:   logOutput,
 		Level: level,
 		Formatter: &logrus.TextFormatter{
 			DisableColors:   true,
@@ -62,5 +57,5 @@ func initLogger() {
 		},
 	}
 
-	logg = logger.NewLogger(l)
+	appLogger = logger.NewLogger(rawLogger)
 }

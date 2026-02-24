@@ -2,11 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
-	"io"
-	"log"
 	"os"
+	"strings"
 )
+
+const defaultClientConfigPath = "config_c.json"
 
 var (
 	connAddr string
@@ -15,76 +17,86 @@ var (
 	confFile string
 )
 
-type config struct {
+type clientConfig struct {
 	ConnAddr string `json:"conn_addr"`
 	LogLevel string `json:"log_level"`
 	LogFile  string `json:"log_file"`
 }
 
 func parseFlags() {
-	var cfg *config
-	flag.StringVar(&confFile, "cfg", "config_c.cfg", "config file path")
-	cfg, err := parseConfig(confFile)
-	if err != nil {
-		flag.StringVar(&connAddr, "a", "localhost:3200", "server connection address")
-		flag.StringVar(&logLevel, "ll", "info", "log level")
-		flag.StringVar(&logFile, "lf", "logs.log", "log path")
-		cfg = &config{
-			ConnAddr: connAddr,
-			LogLevel: logLevel,
-			LogFile:  logFile,
-		}
-	} else {
-		connAddr = cfg.ConnAddr
-		logLevel = cfg.LogLevel
-		logFile = cfg.LogFile
+	confFile = resolveConfigPath(defaultClientConfigPath)
+	defaults := clientConfig{
+		ConnAddr: "localhost:3200",
+		LogLevel: "info",
+		LogFile:  "logs.log",
 	}
 
-	saveCfg(confFile, cfg)
+	if cfg, err := loadClientConfig(confFile); err == nil {
+		if cfg.ConnAddr != "" {
+			defaults.ConnAddr = cfg.ConnAddr
+		}
+		if cfg.LogLevel != "" {
+			defaults.LogLevel = cfg.LogLevel
+		}
+		if cfg.LogFile != "" {
+			defaults.LogFile = cfg.LogFile
+		}
+	}
+
+	flag.StringVar(&confFile, "cfg", confFile, "config file path")
+	flag.StringVar(&connAddr, "a", defaults.ConnAddr, "server connection address")
+	flag.StringVar(&logLevel, "ll", defaults.LogLevel, "log level")
+	flag.StringVar(&logFile, "lf", defaults.LogFile, "log path")
+	flag.Parse()
+
+	_ = saveClientConfig(confFile, &clientConfig{
+		ConnAddr: connAddr,
+		LogLevel: logLevel,
+		LogFile:  logFile,
+	})
 }
 
-func saveCfg(confFile string, cfg *config) {
-	file, err := os.OpenFile(confFile, os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer func(file *os.File) {
-		err = file.Close()
-		if err != nil {
-			log.Fatal(err)
+func resolveConfigPath(defaultPath string) string {
+	args := os.Args[1:]
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		switch {
+		case strings.HasPrefix(arg, "-cfg="):
+			path := strings.TrimSpace(strings.TrimPrefix(arg, "-cfg="))
+			if path != "" {
+				return path
+			}
+		case arg == "-cfg" && i+1 < len(args):
+			path := strings.TrimSpace(args[i+1])
+			if path != "" {
+				return path
+			}
 		}
-	}(file)
-
-	bytes, err := json.Marshal(&cfg)
-	if err != nil {
-		log.Fatal(err)
 	}
-	_, err = file.Write(bytes)
+	return defaultPath
 }
 
-func parseConfig(confFile string) (*config, error) {
-	var conf config
-	file, err := os.Open(confFile)
+func saveClientConfig(path string, cfg *clientConfig) error {
+	bytes, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, bytes, 0o644)
+}
+
+func loadClientConfig(path string) (*clientConfig, error) {
+	buf, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	defer func() {
-		if err = file.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-
-	buf, err := io.ReadAll(file)
-	if err != nil {
+	var cfg clientConfig
+	if err = json.Unmarshal(buf, &cfg); err != nil {
 		return nil, err
 	}
 
-	err = json.Unmarshal(buf, &conf)
-	if err != nil {
-		return nil, err
+	if cfg.ConnAddr == "" && cfg.LogLevel == "" && cfg.LogFile == "" {
+		return nil, errors.New("empty config")
 	}
-
-	return &conf, nil
+	return &cfg, nil
 }

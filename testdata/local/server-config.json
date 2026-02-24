@@ -1,0 +1,6 @@
+{
+  "conn_addr": "localhost:3200",
+  "log_level": "info",
+  "crt_file": "private.pem",
+  "db_file": "demo.db"
+}

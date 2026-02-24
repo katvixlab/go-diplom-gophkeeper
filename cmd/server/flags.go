@@ -2,11 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
-	"io"
-	"log"
 	"os"
+	"strings"
 )
+
+const defaultServerConfigPath = "config_s.json"
 
 var (
 	srvAddr  string
@@ -16,80 +18,99 @@ var (
 	confFile string
 )
 
-type config struct {
-	SrvAddr  string `json:"conn_addr"`
-	LogLevel string `json:"log_level"`
-	CrtFile  string `json:"crt_file"`
-	DBFile   string `json:"log_file"`
+type serverConfig struct {
+	SrvAddr       string `json:"conn_addr"`
+	LogLevel      string `json:"log_level"`
+	CrtFile       string `json:"crt_file"`
+	DBFile        string `json:"db_file"`
+	LegacyDBField string `json:"log_file,omitempty"`
 }
 
 func parseFlags() {
-	var cfg *config
-	flag.StringVar(&confFile, "cfg", "config_s.cfg", "config file path")
-	cfg, err := parseConfig(confFile)
-	if err != nil {
-		flag.StringVar(&srvAddr, "a", "localhost:3200", "server address")
-		flag.StringVar(&logLevel, "ll", "info", "log level")
-		flag.StringVar(&dbFile, "db", "test.db", "db path")
-		flag.StringVar(&crtFile, "crt", "private.pem", "certificate x509 path")
-		cfg = &config{
-			SrvAddr:  srvAddr,
-			LogLevel: logLevel,
-			DBFile:   dbFile,
-			CrtFile:  crtFile,
-		}
-	} else {
-		srvAddr = cfg.SrvAddr
-		logLevel = cfg.LogLevel
-		dbFile = cfg.DBFile
-		crtFile = cfg.CrtFile
+	confFile = resolveConfigPath(defaultServerConfigPath)
+	defaults := serverConfig{
+		SrvAddr:  "localhost:3200",
+		LogLevel: "info",
+		DBFile:   "test.db",
+		CrtFile:  "private.pem",
 	}
 
-	saveCfg(confFile, cfg)
+	if cfg, err := loadServerConfig(confFile); err == nil {
+		if cfg.SrvAddr != "" {
+			defaults.SrvAddr = cfg.SrvAddr
+		}
+		if cfg.LogLevel != "" {
+			defaults.LogLevel = cfg.LogLevel
+		}
+		if cfg.CrtFile != "" {
+			defaults.CrtFile = cfg.CrtFile
+		}
+		if cfg.DBFile != "" {
+			defaults.DBFile = cfg.DBFile
+		}
+	}
+
+	flag.StringVar(&confFile, "cfg", confFile, "config file path")
+	flag.StringVar(&srvAddr, "a", defaults.SrvAddr, "server address")
+	flag.StringVar(&logLevel, "ll", defaults.LogLevel, "log level")
+	flag.StringVar(&dbFile, "db", defaults.DBFile, "db path")
+	flag.StringVar(&crtFile, "crt", defaults.CrtFile, "certificate x509 path")
+	flag.Parse()
+
+	_ = saveServerConfig(confFile, &serverConfig{
+		SrvAddr:  srvAddr,
+		LogLevel: logLevel,
+		DBFile:   dbFile,
+		CrtFile:  crtFile,
+	})
 }
 
-func saveCfg(confFile string, cfg *config) {
-	file, err := os.OpenFile(confFile, os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer func(file *os.File) {
-		err = file.Close()
-		if err != nil {
-			log.Fatal(err)
+func resolveConfigPath(defaultPath string) string {
+	args := os.Args[1:]
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		switch {
+		case strings.HasPrefix(arg, "-cfg="):
+			path := strings.TrimSpace(strings.TrimPrefix(arg, "-cfg="))
+			if path != "" {
+				return path
+			}
+		case arg == "-cfg" && i+1 < len(args):
+			path := strings.TrimSpace(args[i+1])
+			if path != "" {
+				return path
+			}
 		}
-	}(file)
-
-	bytes, err := json.Marshal(&cfg)
-	if err != nil {
-		log.Fatal(err)
 	}
-	_, err = file.Write(bytes)
+	return defaultPath
 }
 
-func parseConfig(confFile string) (*config, error) {
-	var conf config
-	file, err := os.Open(confFile)
+func saveServerConfig(path string, cfg *serverConfig) error {
+	bytes, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, bytes, 0o644)
+}
+
+func loadServerConfig(path string) (*serverConfig, error) {
+	buf, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
-	defer func() {
-		if err = file.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-
-	buf, err := io.ReadAll(file)
-	if err != nil {
+	var cfg serverConfig
+	if err = json.Unmarshal(buf, &cfg); err != nil {
 		return nil, err
 	}
 
-	err = json.Unmarshal(buf, &conf)
-	if err != nil {
-		return nil, err
+	if cfg.DBFile == "" && cfg.LegacyDBField != "" {
+		cfg.DBFile = cfg.LegacyDBField
 	}
 
-	return &conf, nil
+	if cfg.SrvAddr == "" && cfg.LogLevel == "" && cfg.CrtFile == "" && cfg.DBFile == "" {
+		return nil, errors.New("empty config")
+	}
+
+	return &cfg, nil
 }
