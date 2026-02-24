@@ -9,10 +9,10 @@ import (
 	"log"
 	"time"
 
-	pb "github.com/bonus2k/go-diplom-gophkeeper/internal/interfaces/proto"
-	"github.com/bonus2k/go-diplom-gophkeeper/internal/models"
-	"github.com/bonus2k/go-diplom-gophkeeper/internal/util"
 	"github.com/google/uuid"
+	pb "github.com/katvixlab/go-diplom-gophkeeper/internal/interfaces/proto"
+	"github.com/katvixlab/go-diplom-gophkeeper/internal/models"
+	"github.com/katvixlab/go-diplom-gophkeeper/internal/util"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"

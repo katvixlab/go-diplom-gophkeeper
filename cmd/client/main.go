@@ -4,9 +4,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/bonus2k/go-diplom-gophkeeper/internal/logger"
-	"github.com/bonus2k/go-diplom-gophkeeper/internal/mvc"
-	"github.com/bonus2k/go-diplom-gophkeeper/internal/services/ui"
+	"github.com/katvixlab/go-diplom-gophkeeper/internal/logger"
+	"github.com/katvixlab/go-diplom-gophkeeper/internal/mvc"
+	"github.com/katvixlab/go-diplom-gophkeeper/internal/services/ui"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

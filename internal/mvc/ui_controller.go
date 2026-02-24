@@ -5,11 +5,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/bonus2k/go-diplom-gophkeeper/internal/logger"
-	"github.com/bonus2k/go-diplom-gophkeeper/internal/models"
-	"github.com/bonus2k/go-diplom-gophkeeper/internal/services/ui"
 	"github.com/gdamore/tcell/v2"
 	"github.com/google/uuid"
+	"github.com/katvixlab/go-diplom-gophkeeper/internal/logger"
+	"github.com/katvixlab/go-diplom-gophkeeper/internal/models"
+	"github.com/katvixlab/go-diplom-gophkeeper/internal/services/ui"
 	"github.com/rivo/tview"
 )
 

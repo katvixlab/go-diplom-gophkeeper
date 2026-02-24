@@ -7,9 +7,9 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 
-	"github.com/bonus2k/go-diplom-gophkeeper/internal/logger"
-	"github.com/bonus2k/go-diplom-gophkeeper/internal/models"
 	"github.com/google/uuid"
+	"github.com/katvixlab/go-diplom-gophkeeper/internal/logger"
+	"github.com/katvixlab/go-diplom-gophkeeper/internal/models"
 	"github.com/sirupsen/logrus"
 )
 

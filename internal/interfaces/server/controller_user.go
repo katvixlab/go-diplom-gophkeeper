@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 
-	pb "github.com/bonus2k/go-diplom-gophkeeper/internal/interfaces/proto"
-	"github.com/bonus2k/go-diplom-gophkeeper/internal/models"
-	"github.com/bonus2k/go-diplom-gophkeeper/internal/util"
 	"github.com/google/uuid"
+	pb "github.com/katvixlab/go-diplom-gophkeeper/internal/interfaces/proto"
+	"github.com/katvixlab/go-diplom-gophkeeper/internal/models"
+	"github.com/katvixlab/go-diplom-gophkeeper/internal/util"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 	"google.golang.org/grpc/codes"

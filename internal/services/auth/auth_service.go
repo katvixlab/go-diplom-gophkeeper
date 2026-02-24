@@ -11,10 +11,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/bonus2k/go-diplom-gophkeeper/internal/logger"
-	"github.com/bonus2k/go-diplom-gophkeeper/internal/models"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/katvixlab/go-diplom-gophkeeper/internal/logger"
+	"github.com/katvixlab/go-diplom-gophkeeper/internal/models"
 	"github.com/sirupsen/logrus"
 )
 

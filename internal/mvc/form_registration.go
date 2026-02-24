@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/mail"
 
-	pb "github.com/bonus2k/go-diplom-gophkeeper/internal/interfaces/proto"
+	pb "github.com/katvixlab/go-diplom-gophkeeper/internal/interfaces/proto"
 	"github.com/rivo/tview"
 )
 

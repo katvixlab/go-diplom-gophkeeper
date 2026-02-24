@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"testing"
 
-	pb "github.com/bonus2k/go-diplom-gophkeeper/internal/interfaces/proto"
-	"github.com/bonus2k/go-diplom-gophkeeper/internal/models"
 	"github.com/google/uuid"
+	pb "github.com/katvixlab/go-diplom-gophkeeper/internal/interfaces/proto"
+	"github.com/katvixlab/go-diplom-gophkeeper/internal/models"
 )
 
 func TestDtoToEntity(t *testing.T) {

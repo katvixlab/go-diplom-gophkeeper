@@ -1,9 +1,9 @@
 package interfaces
 
 import (
-	pb "github.com/bonus2k/go-diplom-gophkeeper/internal/interfaces/proto"
-	"github.com/bonus2k/go-diplom-gophkeeper/internal/models"
 	"github.com/google/uuid"
+	pb "github.com/katvixlab/go-diplom-gophkeeper/internal/interfaces/proto"
+	"github.com/katvixlab/go-diplom-gophkeeper/internal/models"
 )
 
 func DtoToEntity(note *pb.Note) (models.SecretData, error) {

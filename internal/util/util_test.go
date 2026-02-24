@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/bonus2k/go-diplom-gophkeeper/internal/models"
 	"github.com/google/uuid"
+	"github.com/katvixlab/go-diplom-gophkeeper/internal/models"
 )
 
 func TestEncrypt(t *testing.T) {
